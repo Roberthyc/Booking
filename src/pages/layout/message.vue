@@ -1,5 +1,13 @@
 <script setup lang="ts">
+import { useGlobalStore } from '@/store';
+import { on } from 'events';
+
+const store = useGlobalStore()
+const { studentID, URL } = store
+const url = `${URL}/getBuildingAll`
+const locationList = ref([])
 const isRefresh = ref(false)
+const location = ref<any>("选择会议室")
 function handleRefresh() {
   isRefresh.value = false
 }
@@ -12,7 +20,7 @@ async function picker() {
         children: [
           {
             text: '2212',
-            
+
           },
         ],
       },
@@ -21,16 +29,24 @@ async function picker() {
         children: [
           {
             text: '222',
-            
+
           },
         ],
       },
     ],
-    onChange(values, indexes) {
+    onConfirm(values, indexes) {
       //Snackbar(`values: ${values.toString()}, indexes: ${indexes.toString()}`)
+      location.value = values.pop()
+      console.log(values)
     },
   })
 }
+
+onMounted(async () => {
+  locationList.value = (await (await fetch(url)).json()).data;
+
+}
+)
 </script>
 
 <template>
@@ -46,13 +62,13 @@ async function picker() {
         </template>
       </app-header>
 
-      <var-button type="primary"  block @click="picker">
+      <var-button type="primary" block @click="picker">
         <template #default>
           <var-button type="primary" outline style="border-color: rgba(199, 198, 198, 0.377);">
-            选择会议室
+            {{ location }}
           </var-button>
         </template>
-      
+
       </var-button>
 
     </var-pull-refresh>
@@ -68,10 +84,10 @@ async function picker() {
 .message {
   padding: calc(var(--app-bar-height)) 0 0;
 }
-.var-button{
+
+.var-button {
   border-radius: 0;
 }
-
 </style>
 
 <route>

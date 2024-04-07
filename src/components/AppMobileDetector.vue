@@ -8,7 +8,7 @@ const isMobile = ref(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera M
   <slot v-if="isMobile" />
 
   <div class="result-container" v-else>
-    刘宇你个小可爱
+    请在手机上浏览
   </div>
 </template>
 

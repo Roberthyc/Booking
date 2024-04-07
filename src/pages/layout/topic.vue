@@ -1,42 +1,57 @@
 <script setup lang="ts">
-import { useGlobalStore ,useBookStore} from '@/store';
+import { useGlobalStore, useBookStore } from '@/store';
+import { title } from 'process';
 
 let today = new Date().toISOString().replace(/T.*$/, '')
-const global=useGlobalStore()
-const book=useBookStore()
+const global = useGlobalStore()
+const book = useBookStore()
+const { bookMeetingRoom, freeTime } = storeToRefs(book)
 const isRefresh = ref(false)
-const date = today
+const date = ref(today)
 const loading = ref(false)
 const finished = ref(false)
-let listData:any=ref([])
+let listData: any = ref([])
 const floating = ref(false)
-const {URL}=global
-let url=`${URL}/getEmptyByDate/`
+const { URL } = global
+let url = `${URL}/getEmptyByDate/`
+let freeTimeUrl = `${URL}/getEmptyTime/`
 
- async function handleRefresh() {
-  url = url+today
-  listData.value = (await (await fetch(url)).json()).data;
+async function handleRefresh() {
+  let url2 = url + date.value;
+  listData.value = (await (await fetch(url2)).json()).data;
   isRefresh.value = false;
 }
 
 
 function load() {
-    loading.value = false
-    finished.value = true
+  loading.value = false
+  finished.value = true
 }
-function dateChange(e:any){
-  today=e; 
+function dateChange(e: any) {
+  date.value = e;
   handleRefresh();
+
 }
 
-function onBookButton(item:any){
+async function onBookButton(item: any) {
   floating.value = true;
-  book.bookMeetingRoom=item;
+  bookMeetingRoom.value = item;
+  let url = `${freeTimeUrl}?dateTime=${date.value}&locationId=${item.locationId}`;
+  let value = (await (await fetch(url)).json()).data;
+  let nums=[{}];
+  console.log(value)
+  for (item of value){
+     const {title:title,startTime:start,endTime:end}=value
+     nums.push({title,start,end})
+     console.log(1)
+  }
+ 
 }
 
-onMounted(async ()=>{
-  url+=today
-  listData.value = (await (await fetch(url)).json()).data;
+onMounted(async () => {
+  let url2 = url + date.value
+  listData.value = (await (await fetch(url2)).json()).data;
+
 })
 
 </script>
@@ -53,19 +68,12 @@ onMounted(async ()=>{
         </template>
       </app-header>
 
-      <var-date-picker v-model="date" :on-change="dateChange"/>
+      <var-date-picker v-model="today" :on-change="dateChange" />
 
-      <var-list :finished="finished" v-model:loading="loading" @load="load" >
-        <var-space class="room-list" direction="column" size="large" justify="center" floating >
-          <var-card
-            class="card"
-            outline
-            :floating-duration="650"
-            v-model:floating="floating"
-            v-for="item in listData" 
-            :item="item"
-          
-          >
+      <var-list :finished="finished" v-model:loading="loading" @load="load">
+        <var-space class="room-list" direction="column" size="large" justify="center" floating>
+          <var-card class="card" outline :floating-duration="650" v-model:floating="floating"
+            v-for="item, key in listData" :item="item" :key="key">
             <template #title>
               <text style="font-weight: bolder; font-size: x-large"> {{ item.name }} </text>
             </template>
@@ -73,40 +81,49 @@ onMounted(async ()=>{
               <var-divider dashed />
               <var-space justify="space-between">
                 <var-space direction="column">
-                  <var-space direction="row" >
-                    <var-button size="mini" v-for="detailItem in item.locationDetailsList" :item="item" :key="detailItem.facilityId">
+                  <var-space direction="row">
+                    <var-button size="mini" v-for="detailItem in item.locationDetailsList" :item="item"
+                      :key="detailItem.facilityId">
                       {{ detailItem.facilityName }}
                     </var-button>
                   </var-space>
                   <var-space>
                     <var-icon name="account-circle" />
-                    <text style="font-size: small">容量：{{item.capacity}}人</text>
+                    <text style="font-size: small">容量：{{ item.capacity }}人</text>
                   </var-space>
                 </var-space>
-               <var-tooltip v-if="item.typeId==1">
-                <var-button type="primary" @click="onBookButton(item)">预约</var-button>
-               </var-tooltip>
-               <var-tooltip v-else-if="item.typeId==2" content="该会议室需要审核">
-                <var-button class="check-button" type="primary" @click="onBookButton(item)"  style="padding-right: 3.4px;">
-                  <template #default>
+                <var-tooltip v-if="item.typeId == 1">
+                  <var-button type="primary" @click="onBookButton(item)">预约</var-button>
+                </var-tooltip>
+                <var-tooltip v-else-if="item.typeId == 2" content="该会议室需要审核">
+                  <var-button class="check-button" type="primary" @click="onBookButton(item)"
+                    style="padding-right: 3.4px;">
+                    <template #default>
                       预约
-                    <var-icon name="information-outline" size="12"/>
-                  </template>
-                </var-button>  
-               </var-tooltip> 
-               <var-tooltip v-else="item.typeId==3" content="没有预约权限">
-                <var-button  disabled type="primary" @click="floating = true">预约</var-button>
-               </var-tooltip>
+                      <var-icon name="information-outline" size="12" />
+                    </template>
+                  </var-button>
+                </var-tooltip>
+                <var-tooltip v-else-if="item.typeId == 4" content="该会议室需要审核">
+                  <var-button class="check-button" type="primary" @click="onBookButton(item)"
+                    style="padding-right: 3.4px;">
+                    <template #default>
+                      预约
+                      <var-icon name="information-outline" size="12" />
+                    </template>
+                  </var-button>
+                </var-tooltip>
+                <var-tooltip v-else="item.typeId==3" content="没有预约权限">
+                  <var-button disabled type="primary" @click="onBookButton(item)" floating = true>预约</var-button>
+                </var-tooltip>
+
               </var-space>
             </template>
 
             <template #floating-content>
               <var-divider dashed />
               <div class="card-example-text">
-                <time-grid/>
-
-
-              
+                <time-grid />
               </div>
             </template>
           </var-card>
@@ -124,7 +141,8 @@ onMounted(async ()=>{
   --card-padding: 5px;
   --card-footer-margin: 0;
   --card-title-margin: 0;
-  --badge-icon-size:8px;
+  --badge-icon-size: 8px;
+
   &-item {
     display: flex;
     align-items: center;
@@ -147,10 +165,12 @@ onMounted(async ()=>{
     }
   }
 }
+
 .room-list {
   padding: 0 10px;
 }
-.var-badge--default{
+
+.var-badge--default {
   height: 10px !important;
 }
 </style>
