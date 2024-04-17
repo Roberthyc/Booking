@@ -1,14 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-
-import QrcodeVue, { Level, RenderAs } from 'qrcode.vue'
 import { useGlobalStore } from '@/store';
 import fengeUrl from '@/assets/images/分割.png'
+import { ImagePreview } from '@varlet/ui'
 const active = ref('card')
 const isRefresh = ref(false)
-const level = ref<Level>('M')
-const renderAs = ref<RenderAs>('svg')
-const size = ref(200)
 const loading = ref(false)
 const finished = ref(false)
 const current=ref()
@@ -16,26 +12,35 @@ const history=ref()
 const timeReg = /(?<=-)\d{2}-\d{2}/g
 const dateReg = /\d{2}:\d{2}/g
 const store = useGlobalStore()
+const imgPreview=ref(false)
 const { studentID, URL } = store
 const{today}=storeToRefs(store)
-const value = ref<any>(studentID)
 const noticeValue = ref(['1'])
 const expand = ref(true)
 const endOfListMarker = ref(null)
+const endOfListMarker2 = ref(null)
 const url = `${URL}/getListById?organizerId=${studentID}`
+const imgUrl=`${URL}/generate?qrText=${studentID}`
 let observer: IntersectionObserver
 async function handleRefresh() {
   [current.value,history.value]=splitCondition((await (await fetch(url)).json()).data)
   isRefresh.value = false;
 }
+
 function handleNoticeChange(val) {
   
 }
+
+function imagePreview () {
+  imgPreview.value=true
+}
+
 async function load() {
   loading.value=true;
   [current.value,history.value]=splitCondition((await (await fetch(url)).json()).data)
   loading.value = false;
   finished.value = true;
+
 }
 
 function splitCondition(list: Object){
@@ -43,18 +48,16 @@ function splitCondition(list: Object){
   let l=Object.values(list),flag=-1; 
   for(let item of l){
     if(item.startTime<today.value){
-    
       flag++;
     }
   }
   let current=l.slice(flag+1),history=l.slice(0,flag+1);
   return [current,history]
- 
 }
 
 
 onMounted(async () => {
-  [current.value,history.value]=splitCondition((await (await fetch(url)).json()).data)
+  [current.value,history.value]=splitCondition((await (await fetch(url)).json()).data);
   observer = new IntersectionObserver(entries => {
     // entries 是一个包含所有被观察元素的数组
     // 在本例中我们只观察一个元素，因此 entries 的长度为1
@@ -67,6 +70,7 @@ onMounted(async () => {
 
   // 将滚动容器底部的标记元素添加到观察列表中
   observer.observe(endOfListMarker.value);
+  observer.observe(endOfListMarker2.value);
 }
 )
 
@@ -92,13 +96,17 @@ onBeforeUnmount(() => {
         </var-tabs>
       </template>
     </app-header>
-
+    <var-overlay v-model:show="imgPreview">
+             <div class="overlay-content" @click.stop>
+             <var-image width="300px" height="300px" :src=imgUrl @click="imagePreview" />
+             </div>
+           </var-overlay>
     <var-pull-refresh v-model="isRefresh" @refresh="handleRefresh">
       <var-tabs-items v-model:active="active">
         <var-tab-item class="home-tab-item" name="card" style="display: flex;flex-direction: column;">
           <var-space class="home-tab-item-space" direction="column" size="large" align="center">
             <var-collapse-transition :expand="expand">
-              <qrcode-vue :value="value" :level="level" :render-as="renderAs" :size="size" :margin="5" />
+             <var-image width="200px" height="200px" :src=imgUrl @click="imagePreview" />
             </var-collapse-transition>
             <var-button type="primary" color=var(--color-primary) @click="expand = !expand">请扫身份码进入会议室</var-button>
           </var-space>
@@ -157,7 +165,7 @@ onBeforeUnmount(() => {
                   </div>
 
                 </var-space>
-                <div ref="endOfListMarker"></div>
+                <div ref="endOfListMarker2"></div>
               </var-list>
 
             </div>
@@ -187,7 +195,13 @@ onBeforeUnmount(() => {
   &-tab-item-space {
     padding: 4px;
   }
+
+  
 }
+.var-overlay{
+  background-color: #929292
+}
+
 </style>
 
 <route>

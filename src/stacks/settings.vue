@@ -1,6 +1,13 @@
 <script setup lang="ts">
-const value = ref(false)
-const sliderValue = ref(0)
+const systemValue = ref(false)
+const userValue = ref(false)
+
+function userValueChange(e: any){
+  console.log(e)
+}
+function systemValueChange(e:any){
+  console.log(e)
+}
 </script>
 
 <template>
@@ -13,52 +20,20 @@ const sliderValue = ref(0)
       </app-header>
 
       <div class="settings-list">
-        <var-cell :title="$t('Setting Name')">
+        <var-cell title="系统管理权限">
           <template #icon>
             <var-icon class="settings-icon" size="6vmin" name="image" />
           </template>
           <template #extra>
-            <var-switch class="settings-switch" size="5.2vmin" v-model="value" />
+            <var-switch class="settings-switch" size="5.2vmin" v-model="systemValue" @change="systemValueChange"/>
           </template>
         </var-cell>
-        <var-cell :title="$t('Setting Name')">
+        <var-cell title="用户管理权限">
           <template #icon>
             <var-icon class="settings-icon" size="6vmin" name="image" />
           </template>
           <template #extra>
-            <var-switch class="settings-switch" size="5.2vmin" v-model="value" />
-          </template>
-        </var-cell>
-        <var-cell :title="$t('Setting Name')" :description="$t('Setting Description')">
-          <template #icon>
-            <var-icon class="settings-icon" size="6vmin" name="image" />
-          </template>
-          <template #extra>
-            <var-switch class="settings-switch" size="5.2vmin" v-model="value" />
-          </template>
-        </var-cell>
-        <var-cell :title="$t('Setting Name')" :description="$t('Setting Description')">
-          <template #icon>
-            <var-icon class="settings-icon" size="6vmin" name="image" />
-          </template>
-          <template #extra>
-            <var-switch class="settings-switch" size="5.2vmin" v-model="value" />
-          </template>
-        </var-cell>
-        <var-cell :title="$t('Setting Name')">
-          <template #icon>
-            <var-icon class="settings-slider-icon" size="6vmin" name="image" />
-          </template>
-          <template #description>
-            <var-slider v-model="sliderValue" />
-          </template>
-        </var-cell>
-        <var-cell :title="$t('Setting Name')">
-          <template #icon>
-            <var-icon class="settings-slider-icon" size="6vmin" name="image" />
-          </template>
-          <template #description>
-            <var-slider v-model="sliderValue" />
+            <var-switch class="settings-switch" size="5.2vmin" v-model="userValue" @change="userValueChange"/>
           </template>
         </var-cell>
       </div>

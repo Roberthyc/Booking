@@ -1,7 +1,9 @@
 export const useGlobalStore = defineStore('global', () => {
-  const studentID=ref('S231231095')
+  const studentID=window.location.href.match(/(?<=name=)\w\d+/) ? window.location.href.match(/(?<=name=)\w\d+/)[0]:"S231231095";
+  console.log(studentID)
   const URL=ref('http://113.250.189.122:8090/api/wechat')
-  let today=ref('')
+  const date=ref(new Date().toISOString().replace(/T.*$/, ''))
+  const today=ref('')
   function getCurrentDateTime() {
     const now = new Date();
     const year = now.getFullYear();
@@ -13,11 +15,11 @@ export const useGlobalStore = defineStore('global', () => {
     
     today.value= `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   }
-  return {studentID,URL,today,getCurrentDateTime}
+  return {studentID,URL,today,date,getCurrentDateTime}
 })
 
 export const useBookStore = defineStore('Book', () => {
-  const bookMeetingRoom=reactive({})
+  const bookMeetingRoom=ref('')
   const freeTime=ref([])
   return {bookMeetingRoom,freeTime}
 })

@@ -1,58 +1,49 @@
 <script setup lang="ts">
-import { useGlobalStore } from '@/store';
-import { on } from 'events';
+import { useBookStore, useGlobalStore } from '@/store';
 
 const store = useGlobalStore()
+const book =useBookStore()
 const { studentID, URL } = store
+const {bookMeetingRoom} = storeToRefs(book)
 const url = `${URL}/getBuildingAll`
-const locationList = ref([])
 const isRefresh = ref(false)
 const location = ref<any>("选择会议室")
+const columns=<any>[]
 function handleRefresh() {
   isRefresh.value = false
 }
 async function picker() {
   const { state, texts, indexes } = await Picker({
     cascade: true,
-    columns: [
-      {
-        text: '八号楼',
-        children: [
-          {
-            text: '2212',
-
-          },
-        ],
-      },
-      {
-        text: '九号楼',
-        children: [
-          {
-            text: '222',
-
-          },
-        ],
-      },
-    ],
+    columns: columns,
     onConfirm(values, indexes) {
       //Snackbar(`values: ${values.toString()}, indexes: ${indexes.toString()}`)
+      bookMeetingRoom.value=columns[indexes[0]].children[indexes[1]].locationId
       location.value = values.pop()
-      console.log(values)
     },
   })
+
 }
 
 onMounted(async () => {
-  locationList.value = (await (await fetch(url)).json()).data;
-
-}
-)
+ let value=(await (await fetch(url)).json()).data
+ for(let item of value){
+  let roomsObject=<any>{text:item.name,children:[]}
+  let url2=`${URL}/getLocation/${item.id}`
+  let rooms=(await (await fetch(url2)).json()).data
+  for(let room of rooms){
+    let roomObject={text:room.name,locationId:room.locationId}
+    roomsObject.children.push(roomObject)
+  }
+  columns.push(roomsObject)
+  
+ }
+})
 </script>
 
 <template>
-  <div class="message">
-    <var-pull-refresh v-model="isRefresh" @refresh="handleRefresh">
-      <app-header>
+  <div class="message" >      
+    <app-header>
         <template #left>
           <app-side-menu />
         </template>
@@ -62,7 +53,7 @@ onMounted(async () => {
         </template>
       </app-header>
 
-      <var-button type="primary" block @click="picker">
+      <var-button type="primary" elevation="false" block @click="picker">
         <template #default>
           <var-button type="primary" outline style="border-color: rgba(199, 198, 198, 0.377);">
             {{ location }}
@@ -71,8 +62,12 @@ onMounted(async () => {
 
       </var-button>
 
-    </var-pull-refresh>
-    <time-grid />
+   
+      <time-grid style="margin-bottom: 50px;"/>
+   
+      
+    
+    
 
 
   </div>
@@ -83,6 +78,7 @@ onMounted(async () => {
 <style lang="less" scoped>
 .message {
   padding: calc(var(--app-bar-height)) 0 0;
+ 
 }
 
 .var-button {

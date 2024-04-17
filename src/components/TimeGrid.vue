@@ -13,9 +13,11 @@ import { storeToRefs } from 'pinia'
 
 const global = useGlobalStore()
 const book = useBookStore()
-const { studentID, URL } = storeToRefs(global)
+const {studentID, URL}=global
+const { date } = storeToRefs(global)
 const { bookMeetingRoom, freeTime } = storeToRefs(book)
-const postUrl = `${URL.value}/save`
+const freeTimeUrl = `${URL}/getEmptyTime/`
+const postUrl = `${URL}/save`
 const getUrl = `${URL}/getEmptyTime`
 export default defineComponent({
 
@@ -25,6 +27,8 @@ export default defineComponent({
   data() {
 
     return {
+      date: date,
+      bookMeetingRoom: bookMeetingRoom,
       show: false,
       title: ' ',
       calendarOptions: {
@@ -34,7 +38,7 @@ export default defineComponent({
           interactionPlugin // needed for dateClick
         ],
         themeSystem: 'bootstrap',
-        height: 800,
+        height: "auto",
         handleWindowResize: true,
         locale: zh,
         customButtons: {
@@ -49,6 +53,7 @@ export default defineComponent({
 
         },
         scrollTime: "12:00:00",//设置默认滚动到的时间点
+        longPressDelay:'100',
         views: {
           timeGridDay: { // name of view
             titleFormat: { day: '2-digit', month: '2-digit' },
@@ -60,18 +65,19 @@ export default defineComponent({
         initialView: 'timeGridDay',
         stickyHeaderDates: true,
         initialEvents: INITIAL_EVENTS, // alternatively, use the `events` setting to fetch from a feed
-        events: [{ title: 'event 1', start: '2024-04-02T13:30:00' },
-        ],
+        events: freeTime.value,
         editable: false,
         selectable: true,
+        selectOverlap:false,
         selectMirror: false,
         dayMaxEvents: true,
         weekends: true,
         select: this.handleDateSelect,
         eventsSet: this.handleEvents,
-        dateClick: this.handleDateClick
+        eventClick: this.handleEventClick,
+        datesSet: this.dateSet,
         /* you can update a remote database when these fire:
-        eventAdd:
+        
         eventChange:
         eventRemove:
         */
@@ -84,6 +90,7 @@ export default defineComponent({
       const regex = /(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2}:\d{2})/;
       let start = selectInfo.startStr.match(regex).slice(1, 3).join(' ');
       let end = selectInfo.endStr.match(regex).slice(1, 3).join(' ');
+      console.log(url)
       await fetch(url, {
         method: 'POST',
         headers: {
@@ -93,8 +100,8 @@ export default defineComponent({
         body: JSON.stringify({
           "endTime": end,
           "id": 1,
-          "locationId": bookMeetingRoom.value.locationId,
-          "organizerId": studentID.value,
+          "locationId": bookMeetingRoom.value,
+          "organizerId": studentID,
           "resComment": "我是一个测试预约内容",
           "startTime": start,
           "status": 0,
@@ -104,9 +111,11 @@ export default defineComponent({
         .then(response => {
           console.log(response);
           if (!response.ok) {
-            throw new Error('Network response was not ok');
+           confirm('创建失败');
+           return false;
           }
-          return response.json(); // 解析响应体为 JSON
+          confirm('创建成功');
+         return true;// 解析响应体为 JSON
         })
         .catch(error => {
           console.error('There was an error!', error);
@@ -115,49 +124,91 @@ export default defineComponent({
 
 
     },
-
+    dateSet(dateInfo) {
+      date.value = dateInfo.startStr.replace(/T.*$/, '')
+    },
     async handleDateSelect(selectInfo) {
-      this.show = true;
-      this.title = prompt("请输入会议标题","郑腾创建的会议");
-      await this.postData(postUrl, selectInfo);
       let calendarApi = selectInfo.view.calendar;
-      calendarApi.unselect() // clear date selection
+      calendarApi.unselect(); 
+     // clear date selection
+      if(!bookMeetingRoom.value){
+        confirm('请先选择地址'); 
+        return;
+      }
+      this.title = prompt("请输入会议标题", "郑腾创建的会议");
+     
+      console.log(this.title)
       if (this.title) {
+        if(!await this.postData(postUrl, selectInfo)) return;
         calendarApi.addEvent({
           id: createEventId(),
           title: this.title,
           start: selectInfo.startStr,
           end: selectInfo.endStr,
-          allDay: selectInfo.allDay
+          allDay: false
         })
       }
     },
     handleEventClick(clickInfo) {
+      console.log(freeTime)
       confirm(`该时间段已被占用`)
+
+      //       let calendarApi = this.$refs.fullCalendar.getApi()
+      //       calendarApi.addEvent(  {
+
+      // title: 'Timed event',
+      // start: '2024-04-10' + 'T16:00:00',
+      // end:'2024-04-10' + 'T20:00:00'
+      // }
+      //         )
+
     },
     handleEvents(events) {
       this.currentEvents = events
+
+    },
+    async getFreeTime(date, bookMeetingRoom) {
+      if(!bookMeetingRoom.value) return;
+      let calendarApi = this.$refs.fullCalendar.getApi()
+      let events=calendarApi.getEvents()
+      console.log(date,bookMeetingRoom)
+      for(let e of events ){
+        e.remove();
+      }
+      let url = `${freeTimeUrl}?dateTime=${date.value}&locationId=${bookMeetingRoom.value}`;
+      let value = (await(await fetch(url).catch(e=>console.log("未选择地址"))).json()).data;
+      if(value){
+        for (let item of value) {
+          const { title: title, startTime: start, endTime: end } = item
+          calendarApi.addEvent({ title: title, start: start, end: end })
+        }
+      }
+    },
+  },
+
+
+    watch: {
+      bookMeetingRoom: function (newRoom, oldRoom) {
+        this.getFreeTime(date,bookMeetingRoom)
+      },
+      date:function(newDate){
+        let calendarApi = this.$refs.fullCalendar.getApi()
+        calendarApi.gotoDate(newDate)
+        this.getFreeTime(date,bookMeetingRoom)
+      }
+    },
+    mounted() {
+
     },
 
-  },
-  mounted() {
-
-  }
-
-})
+  })
 
 </script>
 
-<template>
-  <div class='demo-app'>
+<template >
 
-    <div class='demo-app-main'>
+      <FullCalendar class='demo-app-calendar' ref="fullCalendar" :options='calendarOptions' />
 
-      <FullCalendar class='demo-app-calendar'  ref="fullCalendar" :options='calendarOptions'>
-
-      </FullCalendar>
-    </div>
-  </div>
 </template>
 
 <style lang='css'>
