@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-const isMobile = ref(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
+const isMobile = ref()
 </script>
 
 <template>
-  <slot v-if="isMobile" />
+  <slot v-if="!isMobile" />
 
-  <div class="result-container" v-else>
-    请在手机上浏览
-  </div>
+  <div class="result-container" v-else>请在手机上浏览</div>
 </template>
 
 <style lang="less" scoped>

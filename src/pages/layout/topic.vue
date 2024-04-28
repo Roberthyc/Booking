@@ -1,49 +1,46 @@
 <script setup lang="ts">
-import { useGlobalStore, useBookStore } from '@/store';
+import { useGlobalStore, useBookStore } from '@/store'
+import fetchData from '@/utils/fetchData'
 const datePickerModel = new Date().toISOString().replace(/T.*$/, '')
 const global = useGlobalStore()
 const book = useBookStore()
-const { bookMeetingRoom ,freeTime} = storeToRefs(book)
+const { bookMeetingRoom } = storeToRefs(book)
 const isRefresh = ref(false)
-const {date} = storeToRefs(global)
-const selectDate=ref(datePickerModel)
+const { date } = storeToRefs(global)
+const selectDate = ref(datePickerModel)
 const loading = ref(false)
 const finished = ref(false)
 let listData: any = ref([])
 const floating = ref(false)
 const { URL } = global
-const url = `${URL}/getEmptyByDate/`
-let freeTimeUrl = `${URL}/getEmptyTime/`
+const url = `${URL}/freeRoomsByDate?dateTime=`
 
 async function handleRefresh() {
-  let url2 = url + date.value;
-  listData.value = (await (await fetch(url2)).json()).data;
-  isRefresh.value = false;
+  let url2 = url + selectDate.value
+  listData.value = (await (await fetchData(url2)).json()).rows
+  isRefresh.value = false
 }
-
 
 function load() {
   loading.value = false
   finished.value = true
 }
 function dateChange(e: any) {
-   selectDate.value= e;
-  handleRefresh();
+  selectDate.value = e
+  handleRefresh()
 }
 
 async function onBookButton(item: any) {
-  bookMeetingRoom.value = item.locationId;
-  date.value=selectDate.value
-  floating.value = true;
-  
+  bookMeetingRoom.value.roomId = item.roomId
+  bookMeetingRoom.value.roomName = item.roomName
+  date.value = selectDate.value
+  floating.value = true
 }
 
 onMounted(async () => {
   let url2 = url + datePickerModel
-  listData.value = (await (await fetch(url2)).json()).data;
-
+  listData.value = (await (await fetchData(url2)).json()).rows
 })
-
 </script>
 <template>
   <div class="topic">
@@ -62,19 +59,30 @@ onMounted(async () => {
 
       <var-list :finished="finished" v-model:loading="loading" @load="load">
         <var-space class="room-list" direction="column" size="large" justify="center" floating>
-          <var-card class="card" outline :floating-duration="650" v-model:floating="floating"
-            v-for="item, key in listData" :item="item" :key="key">
+          <var-card
+            class="card"
+            outline
+            :floating-duration="650"
+            v-model:floating="floating"
+            v-for="(item, key) in listData"
+            :item="item"
+            :key="key"
+          >
             <template #title>
-              <text style="font-weight: bolder; font-size: x-large"> {{ item.name }} </text>
+              <text style="font-weight: bolder; font-size: x-large"> {{ item.roomName }} </text>
             </template>
             <template #description>
               <var-divider dashed />
               <var-space justify="space-between">
                 <var-space direction="column">
                   <var-space direction="row">
-                    <var-button size="mini" v-for="detailItem in item.locationDetailsList" :item="item"
-                      :key="detailItem.facilityId">
-                      {{ detailItem.facilityName }}
+                    <var-button
+                      size="mini"
+                      v-for="detailItem in item.srwDeviceList"
+                      :item="item"
+                      :key="detailItem.deviceCode"
+                    >
+                      {{ detailItem.deviceName }}
                     </var-button>
                   </var-space>
                   <var-space>
@@ -82,23 +90,24 @@ onMounted(async () => {
                     <text style="font-size: small">容量：{{ item.capacity }}人</text>
                   </var-space>
                 </var-space>
-                <!-- <var-tooltip v-if="item.typeId ">
+
+                <var-tooltip v-if="item.isApproval">
                   <var-button type="primary" @click="onBookButton(item)">预约</var-button>
-                </var-tooltip> -->
-                <var-tooltip v-if="item.typeId " content="该会议室需要审核">
-                  <var-button class="check-button" type="primary" @click="onBookButton(item)"
-                    style="padding-right: 3.4px;">
+                </var-tooltip>
+
+                <var-tooltip v-else content="该会议室需要审核">
+                  <var-button
+                    class="check-button"
+                    type="primary"
+                    @click="onBookButton(item)"
+                    style="padding-right: 3.4px"
+                  >
                     <template #default>
                       预约
                       <var-icon name="information-outline" size="12" />
                     </template>
                   </var-button>
                 </var-tooltip>
-    
-                <var-tooltip v-else="item.typeId" content="没有预约权限">
-                  <var-button disabled type="primary" @click="onBookButton(item)" floating = true>预约</var-button>
-                </var-tooltip>
-
               </var-space>
             </template>
 

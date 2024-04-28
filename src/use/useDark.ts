@@ -4,7 +4,7 @@ import { onMounted } from 'vue'
 
 export function useDark() {
   const saved = localStorage.get('prefer-dark')
-  const isDark = ref(saved || (saved == null && window.matchMedia('(prefers-color-scheme: dark)').matches))
+  const isDark = ref(saved || (saved == null && window.matchMedia('(prefers-color-scheme: light)').matches))
 
   function updateTheme() {
     StyleProvider(isDark.value ? darkTheme : null)

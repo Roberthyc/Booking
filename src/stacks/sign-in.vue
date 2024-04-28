@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { Form } from '@varlet/ui'
 import { validateNotEmpty } from '@/utils/validate'
-
+import fetchData from '@/utils/fetchData'
+import { sessionStorage } from '@/utils/storage'
+const url = 'https://bookspaces.cn/api/weChatLogin/login'
 const { t } = useI18n()
 const form = ref<Form>()
 const isViewPassword = ref(false)
@@ -12,14 +14,15 @@ const account = reactive({
 
 async function submit() {
   const valid = await form.value?.validate()
-
   if (valid) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        Snackbar.success(t('Submit Success'))
-        resolve(undefined)
-      }, 1000)
+    let data = await fetchData(url, 'post', {
+      code: '',
+      password: account.password, //"admin123"
+      username: account.username, //"admin"
+      uuid: ''
     })
+    sessionStorage.set('token', data.token)
+    Snackbar.success(t('Submit Success'))
   }
 }
 </script>
