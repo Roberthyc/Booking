@@ -119,18 +119,24 @@ export default defineComponent({
           console.error('There was an error!', error)
         })
     },
+
     dateSet(dateInfo) {
       date.value = dateInfo.startStr.replace(/T.*$/, '')
     },
+
     async handleDateSelect(selectInfo) {
+
       let calendarApi = selectInfo.view.calendar
-      calendarApi.unselect()
+
+      calendarApi.unselect() // clear date selection
+
       // clear date selection
       if (!bookMeetingRoom.value.roomId) {
         confirm('请先选择地址')
-        return
+        return;
       }
       this.title = prompt('请输入会议标题', '郑腾创建的会议')
+      
 
       if (this.title && (await this.postData(postUrl, selectInfo))) {
         calendarApi.addEvent({
@@ -140,10 +146,10 @@ export default defineComponent({
           end: selectInfo.endStr,
           allDay: false
         })
+        return;
       }
     },
     handleEventClick(clickInfo) {
-      console.log(freeTime)
       confirm(`该时间段已被占用`)
 
       //       let calendarApi = this.$refs.fullCalendar.getApi()

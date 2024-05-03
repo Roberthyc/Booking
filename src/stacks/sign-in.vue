@@ -3,26 +3,38 @@ import { Form } from '@varlet/ui'
 import { validateNotEmpty } from '@/utils/validate'
 import fetchData from '@/utils/fetchData'
 import { sessionStorage } from '@/utils/storage'
-const url = 'https://bookspaces.cn/api/weChatLogin/login'
-const { t } = useI18n()
+import { useGlobalStore } from '@/store'
+const globalstore = useGlobalStore
+const { WXURL } = globalstore()
 const form = ref<Form>()
+const center = ref(false)
 const isViewPassword = ref(false)
 const account = reactive({
   username: '',
   password: ''
 })
 
+const props = defineProps(['userMsg'])
+
 async function submit() {
   const valid = await form.value?.validate()
   if (valid) {
-    let data = await fetchData(url, 'post', {
-      code: '',
-      password: account.password, //"admin123"
-      username: account.username, //"admin"
-      uuid: ''
-    })
-    sessionStorage.set('token', data.token)
-    Snackbar.success(t('Submit Success'))
+    await fetchData(WXURL, 'post', {
+      "code": "",
+      "openId": props.userMsg.openid,
+      "password": "admin123",
+      "phonenumber": "",
+      "realName": account.username,
+      "userNo": account.password,
+      "username": "",
+      "uuid": ""
+    }).then(x =>{
+      center.value=true
+      Snackbar.success(x.msg)
+    });
+    
+    // sessionStorage.set('token', data.token)
+    
   }
 }
 </script>
@@ -30,52 +42,35 @@ async function submit() {
 <template>
   <router-stack>
     <div class="sign-in">
-      <app-header :title="$t('Sign In')">
-        <template #left>
-          <app-back />
-        </template>
-      </app-header>
-
+    <var-popup v-model:show="center" :close-on-click-overlay='false'>
+    <div class="popup-example-block">
+      请等待管理员审核通过
+    </div>
+  </var-popup>
       <var-image src="@/assets/images/logo.svg" width="24vmin" height="24vmin" />
 
       <var-form ref="form" class="sign-in-form">
         <var-space direction="column" :size="['8vmin', 0]">
-          <var-input
-            variant="outlined"
-            :placeholder="$t('Please input {field}', { field: $t('username') })"
-            :rules="[validateNotEmpty()]"
-            v-model="account.username"
-          >
+          <var-input variant="outlined" :placeholder="$t('Please input {field}', { field: $t('username') })"
+            :rules="[validateNotEmpty()]" v-model="account.username">
             <template #prepend-icon>
               <var-icon class="sign-in-form-input-icon" name="account-circle" />
             </template>
           </var-input>
-          <var-input
-            variant="outlined"
-            :placeholder="$t('Please input {field}', { field: $t('password') })"
-            :rules="[validateNotEmpty()]"
-            :type="isViewPassword ? 'text' : 'password'"
-            v-model="account.password"
-          >
+          <var-input variant="outlined" :placeholder="$t('Please input {field}', { field: $t('password') })"
+            :rules="[validateNotEmpty()]" :type="isViewPassword ? 'text' : 'password'" v-model="account.password">
             <template #prepend-icon>
               <var-icon class="sign-in-form-input-icon" name="lock" />
             </template>
             <template #append-icon>
-              <var-icon
-                class="sign-in-form-input-icon"
-                :name="isViewPassword ? 'view' : 'view-outline'"
-                @click="isViewPassword = !isViewPassword"
-              />
+
             </template>
           </var-input>
 
-          <var-space class="sign-in-form-text" justify="space-between" align="center">
-            <var-checkbox>{{ $t('Remember Me') }}</var-checkbox>
-            <span @click="$router.push(`${$route.path}/forgot-password`)">{{ $t('Forgot Password') }}?</span>
-          </var-space>
-          <var-button type="primary" block size="large" auto-loading @click="submit">{{ $t('Sign In') }}</var-button>
-          <var-space class="sign-in-form-text" justify="center" @click="$router.push(`${$route.path}/sign-up`)">
-            {{ $t('Click to sign up') }}
+
+          <var-button type="primary" block size="large" auto-loading @click="submit">{{ $t('提交') }}</var-button>
+          <var-space class="sign-in-form-text" justify="center">
+            {{ $t('第一次使用，需要审核信息') }}
           </var-space>
         </var-space>
       </var-form>
@@ -105,5 +100,9 @@ async function submit() {
       color: var(--color-primary);
     }
   }
+}
+.popup-example-block {
+  padding: 24px;
+  width: 280px;
 }
 </style>

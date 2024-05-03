@@ -1,12 +1,9 @@
 <script setup lang="ts">
-import { useGlobalStore, useBookStore } from '@/store'
+import { useGlobalStore } from '@/store'
 import fetchData from '@/utils/fetchData'
 const datePickerModel = new Date().toISOString().replace(/T.*$/, '')
 const global = useGlobalStore()
-const book = useBookStore()
-const { bookMeetingRoom } = storeToRefs(book)
 const isRefresh = ref(false)
-const { date } = storeToRefs(global)
 const selectDate = ref(datePickerModel)
 const loading = ref(false)
 const finished = ref(false)
@@ -14,6 +11,13 @@ let listData: any = ref([])
 const floating = ref(false)
 const { URL } = global
 const url = `${URL}/freeRoomsByDate?dateTime=`
+const startUsingValue = ref(false)
+const checkValue = ref(false)
+
+
+function systemValueChange(e: any) {
+    console.log(e)
+}
 
 async function handleRefresh() {
   let url2 = url + selectDate.value
@@ -25,17 +29,6 @@ function load() {
   loading.value = false
   finished.value = true
 }
-function dateChange(e: any) {
-  selectDate.value = e
-  handleRefresh()
-}
-
-async function onBookButton(item: any) {
-  bookMeetingRoom.value.roomId = item.roomId
-  bookMeetingRoom.value.roomName = item.roomName
-  date.value = selectDate.value
-  floating.value = true
-}
 
 onMounted(async () => {
   let url2 = url + datePickerModel
@@ -45,18 +38,6 @@ onMounted(async () => {
 <template>
   <div class="topic">
     <var-pull-refresh v-model="isRefresh" @refresh="handleRefresh">
-      <app-header>
-        <template #left>
-          <app-side-menu />
-        </template>
-        <template #right>
-          <app-locale-switch />
-          <app-theme-switch />
-        </template>
-      </app-header>
-
-      <var-date-picker v-model="datePickerModel" :on-change="dateChange" />
-
       <var-list :finished="finished" v-model:loading="loading" @load="load">
         <var-space class="room-list" direction="column" size="large" justify="center" floating>
           <var-card
@@ -91,23 +72,20 @@ onMounted(async () => {
                   </var-space>
                 </var-space>
 
-                <var-tooltip v-if="item.isApproval">
-                  <var-button type="primary" @click="onBookButton(item)">预约</var-button>
-                </var-tooltip>
-
-                <var-tooltip v-else content="该会议室需要审核">
-                  <var-button
-                    class="check-button"
-                    type="primary"
-                    @click="onBookButton(item)"
-                    style="padding-right: 3.4px"
-                  >
-                    <template #default>
-                      预约
-                      <var-icon name="information-outline" size="12" />
-                    </template>
-                  </var-button>
-                </var-tooltip>
+                <var-space direction="column">
+                                        <var-cell title="会议室启用">
+                                            <template #extra>
+                                                <var-switch class="settings-switch" size="5.2vmin" v-model="startUsingValue"
+                                                    @change="systemValueChange" />
+                                            </template>
+                                        </var-cell>
+                                        <var-cell title="会议室是否需要审核">
+                                            <template #extra>
+                                                <var-switch class="settings-switch" size="5.2vmin" v-model="checkValue"
+                                                    @change="systemValueChange" />
+                                            </template>
+                                        </var-cell>
+                                    </var-space>
               </var-space>
             </template>
 
@@ -165,32 +143,3 @@ onMounted(async () => {
   height: 10px !important;
 }
 </style>
-
-<route>
-  {
-    meta: {
-      stacks: [
-        {
-          name: 'sign-in',
-          children: [
-            {
-              name: 'sign-up'
-            },
-            {
-              name: 'forgot-password'
-            }
-          ]
-        },
-        {
-          name: 'sign-up'
-        },
-        {
-          name: 'settings'
-        },
-        {
-          name: 'user-management'
-        }
-      ]
-    }
-  }
-</route>

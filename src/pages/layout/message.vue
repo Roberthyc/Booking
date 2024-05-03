@@ -97,6 +97,9 @@ onMounted(async () => {
         },
         {
           name: 'settings'
+        },
+        {
+          name: 'user-management'
         }
       ]
     }

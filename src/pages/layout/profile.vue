@@ -1,21 +1,52 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import fetchData from '@/utils/fetchData';
+import { useGlobalStore } from '@/store';
+const global=useGlobalStore()
+const {URL}=global
+const systemAuthorityUrl=URL+'/userList'//需要审核的注册用户列表
+const changeStatusUrl=URL+'/changeStatus'
 const isRefresh = ref(false)
-
-function handleRefresh() {
-  isRefresh.value = false
-}
 const loading = ref(false)
 const finished = ref(false)
-const list = ref([1, 2, 3])
+const list=ref([1,2,3])
+const systemAuthorityList = ref([])
 const floating = ref(false)
 const active = ref(0)
+const show = ref(false)
+const msg=ref('')
+
+function handleClick(userId:Number,auditStatus:String){
+  fetchData(changeStatusUrl,'post',{
+    auditStatus,
+    userId
+  }).then((result)=>{
+    msg.value=result.msg;
+    show.value=true;
+  })
+
+} 
+
+function handleRefresh() {
+  fetchData(systemAuthorityUrl,'get').then(r=>r.json()
+  ).then(r=>{
+    systemAuthorityList.value=r.rows
+    isRefresh.value = false
+    console.log(systemAuthorityList);
+  })
+ 
+}
+
 function load() {
   setTimeout(() => {
     loading.value = false
     finished.value = true
   }, 1000)
 }
+
+onMounted(()=>{
+  handleRefresh();
+})
 
 </script>
 
@@ -31,6 +62,7 @@ function load() {
           <app-theme-switch />
         </template>
         <template #content>
+          <var-snackbar type="info" v-model:show="show">{{ msg }}</var-snackbar>
           <div class="profile-header-content">
             <div class="profile-user">
               <var-avatar class="profile-user-avatar" src="@/assets/images/avatar.jpg" size="22vmin" bordered />
@@ -50,8 +82,8 @@ function load() {
         </template>
       </app-header>
       <var-tabs v-model:active="active">
-        <var-tab>用户权限管理</var-tab>
-        <var-tab>系统权限管理</var-tab>
+        <var-tab>会议室申请</var-tab>
+        <var-tab>系统权限申请</var-tab>
       </var-tabs>
 
       <var-tabs-items v-model:active="active">
@@ -75,10 +107,10 @@ function load() {
                         <var-button size="mini">申请人：张三</var-button>
                       </var-space>
                     </var-space>
-                    <var-button type="primary">
+                    <var-button type="primary" >
                       通过
                     </var-button>
-                    <var-button type="primary">
+                    <var-button type="primary" >
                       否决
                     </var-button>
                   </var-space>
@@ -97,38 +129,31 @@ function load() {
         <var-tab-item>
           <var-list :finished="finished" v-model:loading="loading" @load="load">
             <var-space class="room-list" direction="column" size="large" justify="center" floating>
-              <var-card class="card" v-for="item in list" :key="item" outline :floating-duration="650"
+              <var-card class="card" v-for="item in systemAuthorityList" :key="item" outline :floating-duration="650"
                 v-model:floating="floating">
                 <template #title @click="floating = true">
                   <var-icon name="account-circle" />
-                  <text style="font-weight: bolder; font-size: x-large"> 申请人：张三 </text>
+                  <text style="font-weight: bolder; font-size: x-large"> 申请人：{{item.realName}} </text>
                 </template>
                 <template #description>
                   <var-divider dashed />
                   <var-space justify="space-between">
                     <var-space direction="column">
                       <var-space>
-                        <var-button size="normal">电话号码：164898984</var-button>
-                      </var-space>
-                      <var-space>
-                        <var-button size="normal">学号：S231231024</var-button>
+                        <var-button size="normal">学号：{{item.userNo}}</var-button>
                       </var-space>
                     </var-space>
-                    <var-button type="primary">
+                    <var-button type="primary" @click="handleClick(item.userId,'0')">
                       通过
                     </var-button>
-                    <var-button type="primary">
+                    <var-button type="primary" @click="handleClick(item.userId,'1')">
                       否决
                     </var-button>
                   </var-space>
                 </template>
-                <template #extra> </template>
-                <template #floating-content>
-                  <var-divider dashed />
-                  <div class="card-example-text">
-                    <time-grid />
-                  </div>
-                </template>
+                <template #extra>
+          
+               </template>
               </var-card>
             </var-space>
           </var-list>
@@ -136,7 +161,7 @@ function load() {
       </var-tabs-items>
 
     </var-pull-refresh>
-
+<!-- 
     <var-fab type="primary" right="5vmin" bottom="20vmin"
       :drag="{ boundary: { left: '2vmin', right: '2vmin', top: '55vmin', bottom: '15vmin' } }">
       <var-button class="action" type="primary" round>
@@ -148,7 +173,7 @@ function load() {
       <var-button class="action" type="primary" round>
         <var-icon name="heart" />
       </var-button>
-    </var-fab>
+    </var-fab> 悬浮按钮-->
   </div>
 
   <router-stack-view />
@@ -223,6 +248,9 @@ function load() {
         },
         {
           name: 'settings'
+        },
+        {
+          name: 'user-management'
         }
       ]
     }

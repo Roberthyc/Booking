@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-
-const isMobile = ref()
+import signIn from '@/stacks/sign-in.vue';
+import { useGlobalStore } from '@/store';
+const global=useGlobalStore()
+let search= window.location.search
+let userMsg=JSON.parse(decodeURI(search).split('?')[1])
+global.userMsg=userMsg
 </script>
 
 <template>
-  <slot v-if="!isMobile" />
-
-  <div class="result-container" v-else>请在手机上浏览</div>
+  <slot v-if="!userMsg.openid" /> 
+  <signIn v-else :user-msg="userMsg"/>
 </template>
 
 <style lang="less" scoped>

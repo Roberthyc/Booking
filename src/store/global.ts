@@ -1,9 +1,10 @@
 export const useGlobalStore = defineStore('global', () => {
   const studentID = 'S231231095'
-  console.log(studentID)
   const URL = ref('https://bookspaces.cn/api/weChat')
+  const WXURL=ref('https://bookspaces.cn/api/weChatLogin/register')
   const date = ref(new Date().toISOString().replace(/T.*$/, ''))
   const today = ref('')
+  const userMsg=ref('')
   function getCurrentDateTime() {
     const now = new Date()
     const year = now.getFullYear()
@@ -15,7 +16,7 @@ export const useGlobalStore = defineStore('global', () => {
 
     today.value = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
   }
-  return { studentID, URL, today, date, getCurrentDateTime }
+  return { studentID, URL,WXURL, today, date, userMsg, getCurrentDateTime }
 })
 
 export const useBookStore = defineStore('Book', () => {

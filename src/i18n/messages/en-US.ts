@@ -24,6 +24,7 @@ export default {
   QR: 'Conference QR code',
   我的预约: 'My Reservation',
   会议通知: 'Notice',
+
   'confirm password': 'confirm password',
   'Sign In': 'Sign In',
   'Sign Up': 'Sign Up',

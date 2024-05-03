@@ -3,7 +3,9 @@ import { onMounted, ref } from 'vue'
 import { useGlobalStore } from '@/store'
 import fengeUrl from '@/assets/images/分割.png'
 import fetchData from '@/utils/fetchData'
+import { sessionStorage } from '@/utils/storage'
 const active = ref('card')
+const center = ref(false)
 const isRefresh = ref(false)
 const loading = ref(false)
 const finished = ref(false)
@@ -13,10 +15,10 @@ const timeReg = /(?<=-)\d{2}-\d{2}/g
 const dateReg = /\d{2}:\d{2}/g
 const store = useGlobalStore()
 const imgPreview = ref(false)
-const { studentID, URL } = store
-const { today } = storeToRefs(store)
+const { studentID, URL ,userMsg} = store
 const noticeValue = ref(['1'])
 const expand = ref(true)
+const approvalStatus=ref('')
 const endOfListMarker = ref(null)
 const endOfListMarker2 = ref(null)
 const currentUrl = `${URL}/activities?userNo=${studentID}`
@@ -28,7 +30,7 @@ async function handleRefresh() {
   fetchList().then(() => (isRefresh.value = false))
 }
 
-function handleNoticeChange(val: any) {}
+function handleNoticeChange(val: any) { }
 
 function imagePreview() {
   imgPreview.value = true
@@ -58,6 +60,20 @@ async function fetchList() {
 }
 
 onMounted(async () => {
+  if(userMsg.code==500){
+    approvalStatus.value=userMsg.msg
+    center.value=true
+  }
+  else if(userMsg.auditStatus==2){
+    approvalStatus.value='请等待审核通过'
+    center.value=true
+
+  }else if(userMsg.auditStatus===1){
+    center.value=true
+    approvalStatus.value='审核未通过'
+  }else if(userMsg.auditStatus===0){
+    sessionStorage.set('token',userMsg.token)
+  }
   fetchList()
   observer = new IntersectionObserver((entries) => {
     // entries 是一个包含所有被观察元素的数组
@@ -81,8 +97,12 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="home">
-    <app-header
-      >.0.
+    <var-popup v-model:show="center" :close-on-click-overlay='false'>
+    <div class="popup-example-block">
+      {{ approvalStatus }}
+    </div>
+  </var-popup>
+    <app-header>
       <template #left>
         <app-side-menu />
       </template>
@@ -99,7 +119,7 @@ onBeforeUnmount(() => {
     </app-header>
     <var-overlay v-model:show="imgPreview">
       <div class="overlay-content" @click.stop>
-        <var-image width="300px" height="300px" :src="imgUrl" @click="imagePreview" />
+        <var-image width="350px" height="350px" :src="imgUrl" @click="imagePreview" />
       </div>
     </var-overlay>
     <var-pull-refresh v-model="isRefresh" @refresh="handleRefresh">
@@ -107,11 +127,9 @@ onBeforeUnmount(() => {
         <var-tab-item class="home-tab-item" name="card" style="display: flex; flex-direction: column">
           <var-space class="home-tab-item-space" direction="column" size="large" align="center">
             <var-collapse-transition :expand="expand">
-              <var-image width="200px" height="200px" :src="imgUrl" @click="imagePreview" />
+              <var-image width="20rem" height="20rem" :src="imgUrl" @click="imagePreview" />
             </var-collapse-transition>
-            <var-button type="primary" color="var(--color-primary)" @click="expand = !expand"
-              >请扫身份码进入会议室</var-button
-            >
+            <var-button type="primary" color="var(--color-primary)" @click="expand = !expand">请扫身份码进入会议室</var-button>
           </var-space>
           <div style="flex: 1">
             <div style="display: flex; flex-direction: column; height: 300px; overflow-y: auto">
@@ -197,6 +215,10 @@ onBeforeUnmount(() => {
 .var-overlay {
   background-color: #929292;
 }
+.popup-example-block {
+  padding: 24px;
+  width: 280px;
+}
 </style>
 
 <route>
@@ -222,7 +244,12 @@ onBeforeUnmount(() => {
         },
         {
           name: 'settings'
+        },
+        {
+          name: 'user-management'
         }
+ 
+
       ]
     }
   }

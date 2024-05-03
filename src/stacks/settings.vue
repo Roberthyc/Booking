@@ -1,13 +1,6 @@
 <script setup lang="ts">
-const systemValue = ref(false)
-const userValue = ref(false)
 
-function userValueChange(e: any){
-  console.log(e)
-}
-function systemValueChange(e:any){
-  console.log(e)
-}
+const active = ref(0)
 </script>
 
 <template>
@@ -20,22 +13,26 @@ function systemValueChange(e:any){
       </app-header>
 
       <div class="settings-list">
-        <var-cell title="系统管理权限">
-          <template #icon>
-            <var-icon class="settings-icon" size="6vmin" name="image" />
-          </template>
-          <template #extra>
-            <var-switch class="settings-switch" size="5.2vmin" v-model="systemValue" @change="systemValueChange"/>
-          </template>
-        </var-cell>
-        <var-cell title="用户管理权限">
-          <template #icon>
-            <var-icon class="settings-icon" size="6vmin" name="image" />
-          </template>
-          <template #extra>
-            <var-switch class="settings-switch" size="5.2vmin" v-model="userValue" @change="userValueChange"/>
-          </template>
-        </var-cell>
+        <var-tabs elevation item-direction="vertical" color="var(--color-primary)" active-color="#ffffff"
+          inactive-color="#ffffff" v-model:active="active">
+          <var-tab  >
+            <var-icon class="tabs-example-icon" name="account-circle" />
+            <div>用户管理</div>
+          </var-tab>
+          <var-tab >
+            <var-icon class="tabs-example-icon" name="message-text-outline" />
+            <div>会议管理</div>
+          </var-tab>
+        </var-tabs>
+
+        <var-tabs-items v-model:active="active">
+    <var-tab-item>
+      <card />
+    </var-tab-item>
+    <var-tab-item>
+      <room-management/>
+    </var-tab-item>
+  </var-tabs-items>
       </div>
     </div>
   </router-stack>
@@ -47,7 +44,7 @@ function systemValueChange(e:any){
   padding: var(--app-bar-height) 0 0;
 
   &-list {
-    padding: 10px 0;
+    padding: 0px 0;
   }
 
   &-icon,
@@ -63,5 +60,9 @@ function systemValueChange(e:any){
   &-switch {
     margin-right: 4px;
   }
+}
+
+.tabs-example-icon {
+  margin-bottom: 5px;
 }
 </style>
